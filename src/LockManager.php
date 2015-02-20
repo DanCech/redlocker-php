@@ -37,7 +37,7 @@ class LockManager
 	public function __construct(array $servers)
 	{
 		if (!function_exists('socket_create')) {
-			throw new Exception('Socket extension is required');
+			throw new \Exception('Socket extension is required');
 		}
 		
 		$this->servers = $servers;
@@ -51,7 +51,7 @@ class LockManager
 		
 		// make sure we have enough sockets to get a quorum
 		if (count($this->sockets) < $this->quorum) {
-			throw new Exception('Not enough servers available to form a quorum');
+			throw new \Exception('Not enough servers available to form a quorum');
 		}
 		
 		$lock = new Lock($this,$resource);
@@ -78,7 +78,7 @@ class LockManager
 			// see if there are any sockets we can read from or write to
 			if (socket_select($read, $write, $except, 0) === false) {
 				$code = @socket_last_error();
-				throw new Exception('Error selecting from sockets: '. $code .' '. socket_strerror($code));
+				throw new \Exception('Error selecting from sockets: '. $code .' '. socket_strerror($code));
 			}
 			
 			// if we can't read or write, sleep for 10 milliseconds and try again
@@ -133,13 +133,13 @@ class LockManager
 				
 				if ($reply['sequence'] != $lock->token) {
 					// $this->reset();
-					// throw new Exception('Requested lock with sequence ' . $lock->token .', received reply with ' . $reply['sequence']);
+					// throw new \Exception('Requested lock with sequence ' . $lock->token .', received reply with ' . $reply['sequence']);
 					continue;
 				}
 				
 				if ($reply['action'] != self::ACTION_LOCK) {
 					// $this->reset();
-					// throw new Exception('Requested action = ' . self::ACTION_LOCK . '), received action = ' . $reply['action']);
+					// throw new \Exception('Requested action = ' . self::ACTION_LOCK . '), received action = ' . $reply['action']);
 					continue;
 				}
 				
@@ -191,7 +191,7 @@ class LockManager
 		// see if there are any sockets we can write to
 		if (socket_select($read, $write, $except, 0) === false) {
 			$code = socket_last_error();
-			throw new Exception('Error selecting from sockets: '. $code .' '. socket_strerror($code));
+			throw new \Exception('Error selecting from sockets: '. $code .' '. socket_strerror($code));
 		}
 		
 		// send unlock requests
