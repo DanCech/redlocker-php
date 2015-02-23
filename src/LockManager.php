@@ -221,10 +221,6 @@ class LockManager
 			$this->debug('> sent unlock request to '. $this->servers[$i][0] .':'. $this->servers[$i][1]);
 		}
 		
-		if (count($this->sockets) < $this->quorum) {
-			throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
-		}
-		
 		return true;
 	}
 	
