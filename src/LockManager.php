@@ -95,6 +95,7 @@ class LockManager
 					@socket_close($socket);
 					unset($this->sockets[$i]);
 					unset($to_write[$i]);
+					unset($to_read[$i]);
 					
 					$this->debug('! error writing to '. $this->servers[$i][0] .':'. $this->servers[$i][1] .': ' . $code .' '. socket_strerror($code));
 					continue;
