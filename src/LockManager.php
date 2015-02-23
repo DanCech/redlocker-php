@@ -189,10 +189,6 @@ class LockManager
 	{
 		$this->initSockets();
 		
-		if (count($this->sockets) < $this->quorum) {
-			throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
-		}
-		
 		$length = strlen($lock->resource);
 		$buffer = pack('CVVVC', $length, $lock->token, 0, 0, self::ACTION_UNLOCK) . $lock->resource;
 		
@@ -204,7 +200,8 @@ class LockManager
 		// see if there are any sockets we can write to
 		if (socket_select($read, $write, $except, 0) === false) {
 			$code = socket_last_error();
-			throw new \Exception('Error selecting from sockets: '. $code .' '. socket_strerror($code));
+			$this->debug('! error selecting from sockets: '. $code .' '. socket_strerror($code));
+			return false;
 		}
 		
 		// send unlock requests
