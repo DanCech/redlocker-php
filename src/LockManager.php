@@ -51,7 +51,7 @@ class LockManager
 		
 		// make sure we have enough sockets to get a quorum
 		if (count($this->sockets) < $this->quorum) {
-			throw new \Exception('Not enough servers available to form a quorum');
+			throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
 		}
 		
 		$lock = new Lock($this,$resource);
@@ -104,6 +104,10 @@ class LockManager
 				$this->debug('> sent lock request to '. $this->servers[$i][0] .':'. $this->servers[$i][1]);
 			}
 			
+			if (count($this->sockets) < $this->quorum) {
+				throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
+			}
+			
 			// read lock results
 			foreach ($read as $i => $socket) {
 				$data = @socket_read($socket, self::REPLY_SIZE, PHP_BINARY_READ);
@@ -154,6 +158,10 @@ class LockManager
 				$lock->n++;
 			}
 			
+			if (count($this->sockets) < $this->quorum) {
+				throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
+			}
+			
 			$expiryTime = $startTime + $ttl - $drift;
 			
 			// if we know we have a quorum, return lock
@@ -179,6 +187,10 @@ class LockManager
 	public function unlock(Lock $lock)
 	{
 		$this->initSockets();
+		
+		if (count($this->sockets) < $this->quorum) {
+			throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
+		}
 		
 		$length = strlen($lock->resource);
 		$buffer = pack('CVVVC', $length, $lock->token, 0, 0, self::ACTION_UNLOCK) . $lock->resource;
@@ -209,6 +221,10 @@ class LockManager
 			$this->debug('> sent unlock request to '. $this->servers[$i][0] .':'. $this->servers[$i][1]);
 		}
 		
+		if (count($this->sockets) < $this->quorum) {
+			throw new \Exception(sprintf('%d servers available is not enough to form a quorum',count($this->sockets)));
+		}
+		
 		return true;
 	}
 	
@@ -219,14 +235,19 @@ class LockManager
 			// already connected
 			if (!isset($this->sockets[$i])) {
 				// initialize socket
-				$this->sockets[$i] = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+				$result = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+				if (!$result) {
+					continue;
+				}
+				$this->sockets[$i] = $result;
 				
 				socket_set_nonblock($this->sockets[$i]);
 			}
 			
-			// try to connect
+			// Try to connect.  Don't bother checking result.  It's always
+			// false due to socket_set_nonblock(), above.
 			$this->debug('> connecting to '. $server[0] .':'. $server[1]);
-			$result = @socket_connect($this->sockets[$i],$server[0],$server[1]);
+			@socket_connect($this->sockets[$i],$server[0],$server[1]);
 		}
 		
 		return true;
